@@ -46,9 +46,9 @@ if "serial_thread_started" not in st.session_state:
 
 # ---------------- STREAMLIT UI ----------------
 st.set_page_config(layout="wide")
-st.title("📊 Washing Machine Live Dashboard")
+st.title("📊 Fault detector Live DashBoard")
 
-st_autorefresh = st.experimental_rerun
+#st_autorefresh = st.experimental_rerun
 time.sleep(1)
 
 df = pd.DataFrame([{
