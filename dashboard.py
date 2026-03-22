@@ -14,40 +14,41 @@ st_autorefresh(interval=2000, key="refresh")
 MODE = "DEMO"
 API_URL = "https://fault-backend-itqk.onrender.com/data"
 
-# ================= ⚡ ELECTRIC BACKGROUND =================
+# ================= ⚡ BACKGROUND + UI =================
 st.markdown("""
 <style>
 
-/* animated electric grid background */
-body {
-    background: radial-gradient(circle at center, #0a0f1f, #000000);
-    color: white;
+/* 🔥 REAL TRANSMISSION LINE BACKGROUND */
+[data-testid="stAppViewContainer"] {
+    background: url("https://images.unsplash.com/photo-1509395176047-4a66953fd231") no-repeat center center fixed;
+    background-size: cover;
+    animation: zoomBg 25s infinite alternate ease-in-out;
 }
 
-/* moving electric lines */
-.electric-bg {
+/* DARK OVERLAY */
+[data-testid="stAppViewContainer"]::before {
+    content: "";
     position: fixed;
-    width: 100%;
-    height: 100%;
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(0,255,255,0.05) 0px,
-        rgba(0,255,255,0.05) 2px,
-        transparent 2px,
-        transparent 40px
-    );
-    animation: moveLines 5s linear infinite;
-    z-index: -1;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 0;
 }
 
-@keyframes moveLines {
-    from { background-position: 0 0; }
-    to { background-position: 120px 120px; }
+/* KEEP CONTENT ABOVE */
+.main, header, section {
+    position: relative;
+    z-index: 1;
 }
 
-/* glass cards */
+/* ZOOM ANIMATION */
+@keyframes zoomBg {
+    0% { background-size: 100%; }
+    100% { background-size: 110%; }
+}
+
+/* GLASS CARDS */
 .card {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.08);
     padding: 20px;
     border-radius: 15px;
     backdrop-filter: blur(12px);
@@ -55,7 +56,7 @@ body {
     text-align: center;
 }
 
-/* glowing title */
+/* TITLE */
 .title {
     font-size: 42px;
     text-align: center;
@@ -64,11 +65,11 @@ body {
     text-shadow: 0 0 30px #00f2ff;
 }
 
-/* blinking alert */
+/* 🚨 BLINK ALERT */
 .blink {
-    animation: blink-animation 1s steps(2, start) infinite;
+    animation: blink-animation 0.8s steps(2, start) infinite;
     color: red;
-    font-size: 32px;
+    font-size: 34px;
     text-align: center;
     font-weight: bold;
 }
@@ -77,15 +78,23 @@ body {
     to { visibility: hidden; }
 }
 
-/* sidebar glow */
+/* ⚡ LIGHTNING FLASH */
+.flash {
+    animation: flash-bg 0.3s ease 2;
+}
+
+@keyframes flash-bg {
+    0% { background-color: white; }
+    100% { background-color: transparent; }
+}
+
+/* SIDEBAR */
 section[data-testid="stSidebar"] {
     background-color: #0a0f1f;
     box-shadow: 0 0 20px cyan;
 }
 
 </style>
-
-<div class="electric-bg"></div>
 """, unsafe_allow_html=True)
 
 # ================= TITLE =================
@@ -175,6 +184,16 @@ location = st.session_state.fault_location
 if prediction != "NORMAL":
     st.markdown('<div class="blink">🚨 FAULT DETECTED 🚨</div>', unsafe_allow_html=True)
 
+    # ⚡ lightning flash
+    st.markdown("""
+    <script>
+    document.body.classList.add('flash');
+    setTimeout(() => {
+        document.body.classList.remove('flash');
+    }, 300);
+    </script>
+    """, unsafe_allow_html=True)
+
 # ================= METRICS =================
 col1, col2, col3 = st.columns(3)
 
@@ -189,17 +208,24 @@ with col3:
 
 st.markdown(f"### 📍 Fault Location: **{location}**")
 
-# ================= 🌍 CUSTOM MAP =================
+# ================= 🌍 MAP =================
 st.subheader("🌍 Grid Visualization")
 
 lat = [node_locations[n][0] for n in selected_nodes]
 lon = [node_locations[n][1] for n in selected_nodes]
 
+colors = []
+for n in selected_nodes:
+    if n == location:
+        colors.append("red")   # fault node
+    else:
+        colors.append("cyan")
+
 fig_map = go.Figure(go.Scattermapbox(
     lat=lat,
     lon=lon,
     mode='markers+text',
-    marker=dict(size=12, color="cyan"),
+    marker=dict(size=14, color=colors),
     text=selected_nodes
 ))
 
