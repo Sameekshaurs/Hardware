@@ -18,13 +18,12 @@ API_URL = "https://fault-backend-itqk.onrender.com/data"
 st.markdown("""
 <style>
 
-/* 🎬 CINEMATIC BACKGROUND */
+/* 🌌 DEEP CINEMATIC BASE */
 [data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at 30% 20%, #0a1a2f, #000000 70%);
-    overflow: hidden;
+    background: radial-gradient(circle at center, #020617, #000000 80%);
 }
 
-/* ⚡ ELECTRIC ENERGY LAYER */
+/* ⚡ ELECTRIC ENERGY FLOW */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: fixed;
@@ -35,101 +34,111 @@ st.markdown("""
         transparent,
         rgba(0,255,255,0.08)
     );
-    animation: energyFlow 6s infinite linear;
+    animation: energyFlow 5s infinite linear;
     z-index: 0;
 }
 
-/* ⚡ GLOW PULSE */
+/* ⚡ PULSE GLOW */
 [data-testid="stAppViewContainer"]::after {
     content: "";
     position: fixed;
     inset: 0;
     background: radial-gradient(circle, rgba(0,255,255,0.08), transparent 70%);
-    animation: pulse 4s infinite ease-in-out;
+    animation: pulse 3s infinite ease-in-out;
     z-index: 0;
 }
 
-/* ENERGY FLOW ANIMATION */
+/* ENERGY FLOW */
 @keyframes energyFlow {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
 }
 
-/* PULSE ANIMATION */
+/* PULSE */
 @keyframes pulse {
     0% { opacity: 0.2; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.6; }
     100% { opacity: 0.2; }
 }
 
-/* KEEP CONTENT ABOVE */
-.main, header, section {
-    position: relative;
-    z-index: 1;
+/* ⚡ LIGHTNING BOLT */
+.lightning {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: white;
+    opacity: 0;
+    animation: lightningFlash 0.2s ease 2;
+    z-index: 999;
 }
 
-/* 💎 GLASS CARDS WITH NEON EDGE */
+@keyframes lightningFlash {
+    0% { opacity: 0; }
+    50% { opacity: 1; box-shadow: 0 0 20px white; }
+    100% { opacity: 0; }
+}
+
+/* 🔴 FAULT NODE PULSE */
+.pulse-node {
+    animation: nodePulse 1s infinite;
+}
+
+@keyframes nodePulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* 💎 CARDS */
 .card {
     background: rgba(255,255,255,0.05);
     padding: 20px;
     border-radius: 15px;
     backdrop-filter: blur(15px);
     box-shadow:
-        0 0 10px rgba(0,255,255,0.4),
-        0 0 30px rgba(0,255,255,0.2);
+        0 0 10px rgba(0,255,255,0.5),
+        0 0 40px rgba(0,255,255,0.2);
     text-align: center;
 }
 
-/* 🎬 CINEMATIC TITLE */
+/* 🎬 TITLE */
 .title {
-    font-size: 46px;
+    font-size: 48px;
     text-align: center;
     font-weight: bold;
     color: #00f2ff;
     text-shadow:
         0 0 10px #00f2ff,
-        0 0 40px #00f2ff,
-        0 0 80px rgba(0,255,255,0.6);
-    margin-bottom: 20px;
+        0 0 50px #00f2ff,
+        0 0 100px rgba(0,255,255,0.6);
 }
 
-/* 🚨 ALERT (INTENSE) */
+/* 🚨 ALERT */
 .blink {
-    animation: blink-animation 0.6s steps(2, start) infinite;
+    animation: blink-animation 0.5s steps(2, start) infinite;
     color: #ff2e2e;
-    font-size: 36px;
+    font-size: 38px;
     text-align: center;
     font-weight: bold;
-    text-shadow: 0 0 20px red;
+    text-shadow: 0 0 30px red;
 }
 
 @keyframes blink-animation {
     to { visibility: hidden; }
 }
 
-/* ⚡ SCREEN FLASH ON FAULT */
-.flash {
-    animation: flash-bg 0.25s ease 3;
-}
-
-@keyframes flash-bg {
-    0% { background-color: white; }
-    100% { background-color: transparent; }
-}
-
-/* 🎛 SIDEBAR (DARK CONTROL PANEL) */
+/* 🎛 SIDEBAR */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(to bottom, #050a14, #000000);
+    background: linear-gradient(to bottom, #020617, #000000);
     box-shadow: 0 0 30px cyan;
 }
 
-/* 🌫 SUBTLE FOG EFFECT */
-.main::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at bottom, rgba(0,0,0,0.6), transparent);
-    z-index: 0;
+/* KEEP CONTENT ABOVE */
+.main, header, section {
+    position: relative;
+    z-index: 1;
 }
 
 </style>
@@ -220,9 +229,13 @@ location = st.session_state.fault_location
 
 # ================= ALERT =================
 if prediction != "NORMAL":
+    # 🚨 blinking alert
     st.markdown('<div class="blink">🚨 FAULT DETECTED 🚨</div>', unsafe_allow_html=True)
 
-    # ⚡ lightning flash
+    # ⚡ lightning strike overlay
+    st.markdown('<div class="lightning"></div>', unsafe_allow_html=True)
+
+    # ⚡ screen flash effect
     st.markdown("""
     <script>
     document.body.classList.add('flash');
@@ -231,7 +244,6 @@ if prediction != "NORMAL":
     }, 300);
     </script>
     """, unsafe_allow_html=True)
-
 # ================= METRICS =================
 col1, col2, col3 = st.columns(3)
 
@@ -252,19 +264,43 @@ st.subheader("🌍 Grid Visualization")
 lat = [node_locations[n][0] for n in selected_nodes]
 lon = [node_locations[n][1] for n in selected_nodes]
 
+fig_map = go.Figure()
+
+# 🔗 CONNECTION LINES (like transmission lines)
+line_lat = []
+line_lon = []
+
+for i in range(len(lat) - 1):
+    line_lat += [lat[i], lat[i+1], None]
+    line_lon += [lon[i], lon[i+1], None]
+
+fig_map.add_trace(go.Scattermapbox(
+    lat=line_lat,
+    lon=line_lon,
+    mode='lines',
+    line=dict(width=3, color='cyan'),
+    hoverinfo='none'
+))
+
+# 🔴 NODES (with fault highlight)
 colors = []
+sizes = []
+
 for n in selected_nodes:
     if n == location:
-        colors.append("red")   # fault node
+        colors.append("red")      # fault node
+        sizes.append(20)          # bigger size
     else:
         colors.append("cyan")
+        sizes.append(12)
 
-fig_map = go.Figure(go.Scattermapbox(
+fig_map.add_trace(go.Scattermapbox(
     lat=lat,
     lon=lon,
     mode='markers+text',
-    marker=dict(size=14, color=colors),
-    text=selected_nodes
+    marker=dict(size=sizes, color=colors),
+    text=selected_nodes,
+    textposition="top center"
 ))
 
 fig_map.update_layout(
