@@ -18,34 +18,48 @@ API_URL = "https://fault-backend-itqk.onrender.com/data"
 st.markdown("""
 <style>
 
-/* ⚡ PURE AESTHETIC BACKGROUND (NO IMAGES) */
+/* 🎬 CINEMATIC BACKGROUND */
 [data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at top, #0a0f1f, #000000);
+    background: radial-gradient(circle at 30% 20%, #0a1a2f, #000000 70%);
+    overflow: hidden;
 }
 
-/* SUBTLE ELECTRIC GRID GLOW */
+/* ⚡ ELECTRIC ENERGY LAYER */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: fixed;
     inset: 0;
-    background-image: linear-gradient(
-        rgba(0,255,255,0.05) 1px,
-        transparent 1px
-    ),
-    linear-gradient(
-        90deg,
-        rgba(0,255,255,0.05) 1px,
-        transparent 1px
+    background: linear-gradient(
+        120deg,
+        rgba(0,255,255,0.05),
+        transparent,
+        rgba(0,255,255,0.08)
     );
-    background-size: 60px 60px;
-    animation: moveGrid 8s linear infinite;
+    animation: energyFlow 6s infinite linear;
     z-index: 0;
 }
 
-/* GRID ANIMATION */
-@keyframes moveGrid {
-    from { transform: translate(0,0); }
-    to { transform: translate(60px,60px); }
+/* ⚡ GLOW PULSE */
+[data-testid="stAppViewContainer"]::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(0,255,255,0.08), transparent 70%);
+    animation: pulse 4s infinite ease-in-out;
+    z-index: 0;
+}
+
+/* ENERGY FLOW ANIMATION */
+@keyframes energyFlow {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* PULSE ANIMATION */
+@keyframes pulse {
+    0% { opacity: 0.2; }
+    50% { opacity: 0.5; }
+    100% { opacity: 0.2; }
 }
 
 /* KEEP CONTENT ABOVE */
@@ -54,42 +68,68 @@ st.markdown("""
     z-index: 1;
 }
 
-/* GLASS CARDS */
+/* 💎 GLASS CARDS WITH NEON EDGE */
 .card {
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.05);
     padding: 20px;
     border-radius: 15px;
     backdrop-filter: blur(15px);
-    box-shadow: 0 0 30px rgba(0,255,255,0.4);
+    box-shadow:
+        0 0 10px rgba(0,255,255,0.4),
+        0 0 30px rgba(0,255,255,0.2);
     text-align: center;
 }
 
-/* TITLE */
+/* 🎬 CINEMATIC TITLE */
 .title {
-    font-size: 44px;
+    font-size: 46px;
     text-align: center;
     font-weight: bold;
     color: #00f2ff;
-    text-shadow: 0 0 40px #00f2ff;
+    text-shadow:
+        0 0 10px #00f2ff,
+        0 0 40px #00f2ff,
+        0 0 80px rgba(0,255,255,0.6);
+    margin-bottom: 20px;
 }
 
-/* 🚨 ALERT */
+/* 🚨 ALERT (INTENSE) */
 .blink {
-    animation: blink-animation 0.8s steps(2, start) infinite;
-    color: red;
-    font-size: 34px;
+    animation: blink-animation 0.6s steps(2, start) infinite;
+    color: #ff2e2e;
+    font-size: 36px;
     text-align: center;
     font-weight: bold;
+    text-shadow: 0 0 20px red;
 }
 
 @keyframes blink-animation {
     to { visibility: hidden; }
 }
 
-/* SIDEBAR */
+/* ⚡ SCREEN FLASH ON FAULT */
+.flash {
+    animation: flash-bg 0.25s ease 3;
+}
+
+@keyframes flash-bg {
+    0% { background-color: white; }
+    100% { background-color: transparent; }
+}
+
+/* 🎛 SIDEBAR (DARK CONTROL PANEL) */
 section[data-testid="stSidebar"] {
-    background-color: #050a14;
-    box-shadow: 0 0 25px cyan;
+    background: linear-gradient(to bottom, #050a14, #000000);
+    box-shadow: 0 0 30px cyan;
+}
+
+/* 🌫 SUBTLE FOG EFFECT */
+.main::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at bottom, rgba(0,0,0,0.6), transparent);
+    z-index: 0;
 }
 
 </style>
