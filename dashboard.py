@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import random
 from streamlit_autorefresh import st_autorefresh
@@ -13,48 +14,61 @@ st_autorefresh(interval=2000, key="refresh")
 MODE = "DEMO"
 API_URL = "https://fault-backend-itqk.onrender.com/data"
 
-# ================= BACKGROUND + UI =================
+# ================= ⚡ ELECTRIC BACKGROUND =================
 st.markdown("""
 <style>
 
-/* Animated gradient background */
+/* animated electric grid background */
 body {
-    background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #00c6ff);
-    background-size: 400% 400%;
-    animation: gradientBG 10s ease infinite;
+    background: radial-gradient(circle at center, #0a0f1f, #000000);
     color: white;
 }
 
-@keyframes gradientBG {
-    0% {background-position: 0% 50%;}
-    50% {background-position: 100% 50%;}
-    100% {background-position: 0% 50%;}
+/* moving electric lines */
+.electric-bg {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(0,255,255,0.05) 0px,
+        rgba(0,255,255,0.05) 2px,
+        transparent 2px,
+        transparent 40px
+    );
+    animation: moveLines 5s linear infinite;
+    z-index: -1;
 }
 
-/* Glass cards */
+@keyframes moveLines {
+    from { background-position: 0 0; }
+    to { background-position: 120px 120px; }
+}
+
+/* glass cards */
 .card {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
     padding: 20px;
     border-radius: 15px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 0 20px rgba(0,255,255,0.2);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 25px rgba(0,255,255,0.3);
     text-align: center;
 }
 
-/* Title */
+/* glowing title */
 .title {
     font-size: 42px;
     text-align: center;
     font-weight: bold;
     color: #00f2ff;
-    text-shadow: 0 0 25px #00f2ff;
+    text-shadow: 0 0 30px #00f2ff;
 }
 
-/* Blinking alert */
+/* blinking alert */
 .blink {
     animation: blink-animation 1s steps(2, start) infinite;
     color: red;
-    font-size: 30px;
+    font-size: 32px;
     text-align: center;
     font-weight: bold;
 }
@@ -63,17 +77,30 @@ body {
     to { visibility: hidden; }
 }
 
-/* Table styling */
-[data-testid="stDataFrame"] {
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
+/* sidebar glow */
+section[data-testid="stSidebar"] {
+    background-color: #0a0f1f;
+    box-shadow: 0 0 20px cyan;
 }
 
 </style>
+
+<div class="electric-bg"></div>
 """, unsafe_allow_html=True)
 
 # ================= TITLE =================
 st.markdown('<div class="title">⚡ Smart Fault Detection System</div>', unsafe_allow_html=True)
+
+# ================= 🎛 CONTROL PANEL =================
+st.sidebar.title("🎛 Control Panel")
+
+selected_nodes = st.sidebar.multiselect(
+    "Active Nodes",
+    ["Line Node 1","Line Node 2","Line Node 3","Line Node 4","Line Node 5"],
+    default=["Line Node 1","Line Node 2"]
+)
+
+threshold = st.sidebar.slider("Current Threshold", 1, 15, 8)
 
 # ================= NODE LOCATIONS =================
 node_locations = {
@@ -110,7 +137,7 @@ def get_data():
 def predict_fault(voltage, current):
     if voltage < 200:
         return "UNDER VOLTAGE FAULT"
-    elif current > 8:
+    elif current > threshold:
         return "OVER CURRENT FAULT"
     else:
         return "NORMAL"
@@ -140,7 +167,7 @@ if prediction == "NORMAL":
 else:
     fault = f"{prediction} ⚠️"
     if st.session_state.fault_location == "-":
-        st.session_state.fault_location = f"Line Node {random.randint(1,5)}"
+        st.session_state.fault_location = random.choice(selected_nodes)
 
 location = st.session_state.fault_location
 
@@ -162,21 +189,39 @@ with col3:
 
 st.markdown(f"### 📍 Fault Location: **{location}**")
 
-# ================= MAP =================
-if location != "-":
-    lat, lon = node_locations.get(location, (12.9716, 77.5946))
-    st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+# ================= 🌍 CUSTOM MAP =================
+st.subheader("🌍 Grid Visualization")
+
+lat = [node_locations[n][0] for n in selected_nodes]
+lon = [node_locations[n][1] for n in selected_nodes]
+
+fig_map = go.Figure(go.Scattermapbox(
+    lat=lat,
+    lon=lon,
+    mode='markers+text',
+    marker=dict(size=12, color="cyan"),
+    text=selected_nodes
+))
+
+fig_map.update_layout(
+    mapbox_style="carto-darkmatter",
+    mapbox_zoom=4,
+    mapbox_center={"lat": 13, "lon": 78},
+    margin={"r":0,"t":0,"l":0,"b":0}
+)
+
+st.plotly_chart(fig_map, use_container_width=True)
 
 # ================= GRAPHS =================
 col1, col2 = st.columns(2)
 
 with col1:
-    fig1 = px.line(df, x="Time", y="Voltage", title="Voltage vs Time")
+    fig1 = px.line(df, x="Time", y="Voltage")
     fig1.update_layout(template="plotly_dark")
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
-    fig2 = px.line(df, x="Time", y="Current", title="Current vs Time")
+    fig2 = px.line(df, x="Time", y="Current")
     fig2.update_layout(template="plotly_dark")
     st.plotly_chart(fig2, use_container_width=True)
 
