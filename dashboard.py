@@ -266,7 +266,7 @@ lon = [node_locations[n][1] for n in selected_nodes]
 
 fig_map = go.Figure()
 
-# 🔗 CONNECTION LINES (like transmission lines)
+# 🔗 BASE GRID LINES (dim background lines)
 line_lat = []
 line_lon = []
 
@@ -278,18 +278,38 @@ fig_map.add_trace(go.Scattermapbox(
     lat=line_lat,
     lon=line_lon,
     mode='lines',
-    line=dict(width=3, color='cyan'),
+    line=dict(width=2, color='rgba(0,255,255,0.3)'),
     hoverinfo='none'
 ))
 
-# 🔴 NODES (with fault highlight)
+# ⚡ CURRENT FLOW (moving dots illusion)
+flow_lat = []
+flow_lon = []
+
+for i in range(len(lat) - 1):
+    # midpoints → simulate moving current
+    mid_lat = (lat[i] + lat[i+1]) / 2
+    mid_lon = (lon[i] + lon[i+1]) / 2
+
+    flow_lat.append(mid_lat)
+    flow_lon.append(mid_lon)
+
+fig_map.add_trace(go.Scattermapbox(
+    lat=flow_lat,
+    lon=flow_lon,
+    mode='markers',
+    marker=dict(size=8, color='cyan'),
+    hoverinfo='none'
+))
+
+# 🔴 NODES
 colors = []
 sizes = []
 
 for n in selected_nodes:
     if n == location:
-        colors.append("red")      # fault node
-        sizes.append(20)          # bigger size
+        colors.append("red")
+        sizes.append(24)   # bigger
     else:
         colors.append("cyan")
         sizes.append(12)
