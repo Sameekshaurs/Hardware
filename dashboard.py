@@ -1,70 +1,82 @@
 import streamlit as st
-import time
-import threading
-import serial
 import pandas as pd
 import plotly.express as px
+import random
+import time
 
-SERIAL_PORT = "COM23"
-BAUD_RATE = 9600
+# ================= CONFIG =================
+MODE = "DEMO"   # 🔁 change to "REAL" when using ESP32 locally
 
-# ---------------- SHARED DATA ----------------
-latest_data = {
-    "rpm": 0,
-    "flow": 0.0,
-    "volume": 0.0
+# ================= PAGE =================
+st.set_page_config(layout="wide")
+st.title("⚡ AI-Based Fault Detection Dashboard")
+
+# ================= DATA STORAGE =================
+if "data" not in st.session_state:
+    st.session_state.data = pd.DataFrame(columns=["Time", "Voltage", "Current"])
+
+# ================= DATA SOURCE =================
+def get_data():
+    if MODE == "REAL":
+        try:
+            import serial
+            ser = serial.Serial("COM23", 9600, timeout=1)
+            line = ser.readline().decode().strip()
+            parts = line.split(",")
+
+            voltage = float(parts[0])
+            current = float(parts[1])
+
+            return voltage, current
+        except:
+            return 0, 0
+
+    else:
+        # DEMO DATA
+        voltage = random.uniform(210, 240)
+        current = random.uniform(0, 10)
+        return voltage, current
+
+# ================= GET DATA =================
+voltage, current = get_data()
+
+new_data = {
+    "Time": len(st.session_state.data),
+    "Voltage": voltage,
+    "Current": current
 }
 
-# ---------------- SERIAL THREAD ----------------
-def serial_reader():
-    try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        time.sleep(2)
-    except Exception as e:
-        print("Serial error:", e)
-        return
-
-    while True:
-        try:
-            line = ser.readline().decode(errors="ignore").strip()
-            if not line:
-                continue
-
-            parts = line.split(",")
-            if len(parts) == 3:
-                latest_data["rpm"] = float(parts[0])
-                latest_data["flow"] = float(parts[1])
-                latest_data["volume"] = float(parts[2])
-
-        except:
-            pass
-
-# Start thread ONCE
-if "serial_thread_started" not in st.session_state:
-    threading.Thread(target=serial_reader, daemon=True).start()
-    st.session_state.serial_thread_started = True
-
-# ---------------- STREAMLIT UI ----------------
-st.set_page_config(layout="wide")
-st.title("📊 Fault detector Live DashBoard")
-
-#st_autorefresh = st.experimental_rerun
-time.sleep(1)
-
-df = pd.DataFrame([{
-    "RPM": latest_data["rpm"],
-    "FlowRate": latest_data["flow"],
-    "TotalVolume": latest_data["volume"]
-}])
-
-st.metric("RPM", latest_data["rpm"])
-st.metric("Flow Rate (L/min)", latest_data["flow"])
-st.metric("Total Volume (L)", latest_data["volume"])
-
-fig = px.bar(
-    df,
-    y=["RPM", "FlowRate", "TotalVolume"],
-    title="Live Values"
+st.session_state.data = pd.concat(
+    [st.session_state.data, pd.DataFrame([new_data])],
+    ignore_index=True
 )
-st.plotly_chart(fig, use_container_width=True)
 
+df = st.session_state.data.tail(50)
+
+# ================= FAULT LOGIC =================
+fault = "NO FAULT ✅"
+location = "-"
+
+if voltage < 200 or current > 8:
+    fault = "FAULT DETECTED ⚠️"
+    location = f"Node {random.randint(1,5)}"
+
+# ================= METRICS =================
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Voltage (V)", round(voltage, 2))
+col2.metric("Current (A)", round(current, 2))
+col3.metric("Status", fault)
+
+st.subheader(f"📍 Fault Location: {location}")
+
+# ================= GRAPHS =================
+fig1 = px.line(df, x="Time", y="Voltage", title="Voltage vs Time")
+st.plotly_chart(fig1, use_container_width=True)
+
+fig2 = px.line(df, x="Time", y="Current", title="Current vs Time")
+st.plotly_chart(fig2, use_container_width=True)
+
+# ================= AUTO REFRESH =================
+time.sleep(2)
+st.rerun()
