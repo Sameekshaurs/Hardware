@@ -1,14 +1,10 @@
 from flask import Flask, request, jsonify
+import os
 
 app = Flask(__name__)
 
-# Store latest values
-latest_data = {
-    "voltage": 0,
-    "current": 0
-}
+latest_data = {"voltage": 0, "current": 0}
 
-# ESP32 will SEND data here
 @app.route("/update", methods=["POST"])
 def update():
     data = request.json
@@ -16,12 +12,11 @@ def update():
     latest_data["current"] = data.get("current", 0)
     return jsonify({"status": "received"})
 
-# Streamlit will GET data from here
 @app.route("/data")
 def data():
     return jsonify(latest_data)
 
-import os
-
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
+# 🔥 THIS PART IS VERY IMPORTANT
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
