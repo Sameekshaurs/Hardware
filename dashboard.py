@@ -18,20 +18,34 @@ API_URL = "https://fault-backend-itqk.onrender.com/data"
 st.markdown("""
 <style>
 
-/* 🔥 REAL TRANSMISSION LINE BACKGROUND */
+/* ⚡ PURE AESTHETIC BACKGROUND (NO IMAGES) */
 [data-testid="stAppViewContainer"] {
-    background: url("https://images.unsplash.com/photo-1509395176047-4a66953fd231") no-repeat center center fixed;
-    background-size: cover;
-    animation: zoomBg 25s infinite alternate ease-in-out;
+    background: radial-gradient(circle at top, #0a0f1f, #000000);
 }
 
-/* DARK OVERLAY */
+/* SUBTLE ELECTRIC GRID GLOW */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background-image: linear-gradient(
+        rgba(0,255,255,0.05) 1px,
+        transparent 1px
+    ),
+    linear-gradient(
+        90deg,
+        rgba(0,255,255,0.05) 1px,
+        transparent 1px
+    );
+    background-size: 60px 60px;
+    animation: moveGrid 8s linear infinite;
     z-index: 0;
+}
+
+/* GRID ANIMATION */
+@keyframes moveGrid {
+    from { transform: translate(0,0); }
+    to { transform: translate(60px,60px); }
 }
 
 /* KEEP CONTENT ABOVE */
@@ -40,32 +54,26 @@ st.markdown("""
     z-index: 1;
 }
 
-/* ZOOM ANIMATION */
-@keyframes zoomBg {
-    0% { background-size: 100%; }
-    100% { background-size: 110%; }
-}
-
 /* GLASS CARDS */
 .card {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.06);
     padding: 20px;
     border-radius: 15px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 0 25px rgba(0,255,255,0.3);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 30px rgba(0,255,255,0.4);
     text-align: center;
 }
 
 /* TITLE */
 .title {
-    font-size: 42px;
+    font-size: 44px;
     text-align: center;
     font-weight: bold;
     color: #00f2ff;
-    text-shadow: 0 0 30px #00f2ff;
+    text-shadow: 0 0 40px #00f2ff;
 }
 
-/* 🚨 BLINK ALERT */
+/* 🚨 ALERT */
 .blink {
     animation: blink-animation 0.8s steps(2, start) infinite;
     color: red;
@@ -78,20 +86,10 @@ st.markdown("""
     to { visibility: hidden; }
 }
 
-/* ⚡ LIGHTNING FLASH */
-.flash {
-    animation: flash-bg 0.3s ease 2;
-}
-
-@keyframes flash-bg {
-    0% { background-color: white; }
-    100% { background-color: transparent; }
-}
-
 /* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background-color: #0a0f1f;
-    box-shadow: 0 0 20px cyan;
+    background-color: #050a14;
+    box-shadow: 0 0 25px cyan;
 }
 
 </style>
