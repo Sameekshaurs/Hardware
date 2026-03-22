@@ -11,7 +11,7 @@ st_autorefresh(interval=2000, key="refresh")
 
 # ================= CONFIG =================
 MODE = "DEMO"   # change to "API" later
-API_URL = "http://127.0.0.1:5000/data"
+API_URL = "https://fault-backend-itqk.onrender.com/data"
 
 # ================= NODE LOCATIONS =================
 node_locations = {
