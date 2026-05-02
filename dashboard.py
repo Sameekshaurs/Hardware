@@ -391,34 +391,21 @@ with col2:
 
 # ================= HISTORY =================
 # ================= HISTORY =================
+# ================= HISTORY =================
 
-# Node A fault
-if faultA != "NORMAL":
-    new_fault_A = pd.DataFrame([{
+if overall_fault != "NORMAL ✅":
+    new_fault = pd.DataFrame([{
         "Timestamp": datetime.now().strftime("%H:%M:%S"),
-        "Fault Type": faultA,
-        "Location": "Node A",
-        "Voltage": round(nodeA_v, 2),
-        "Current": round(nodeA_c, 2)
+        "Fault Type": overall_fault,
+        "Location": location,
+        "Node A Voltage": round(nodeA_v, 2),
+        "Node A Current": round(nodeA_c, 2),
+        "Node B Voltage": round(nodeB_v, 2),
+        "Node B Current": round(nodeB_c, 2)
     }])
 
     st.session_state.fault_history = pd.concat(
-        [st.session_state.fault_history, new_fault_A],
-        ignore_index=True
-    )
-
-# Node B fault
-if faultB != "NORMAL":
-    new_fault_B = pd.DataFrame([{
-        "Timestamp": datetime.now().strftime("%H:%M:%S"),
-        "Fault Type": faultB,
-        "Location": "Node B",
-        "Voltage": round(nodeB_v, 2),
-        "Current": round(nodeB_c, 2)
-    }])
-
-    st.session_state.fault_history = pd.concat(
-        [st.session_state.fault_history, new_fault_B],
+        [st.session_state.fault_history, new_fault],
         ignore_index=True
     )
 
@@ -428,3 +415,4 @@ st.session_state.fault_history = st.session_state.fault_history.tail(20)
 # display
 st.subheader("📜 Fault History")
 st.dataframe(st.session_state.fault_history, use_container_width=True)
+

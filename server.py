@@ -19,7 +19,10 @@ def update():
     latest_data["nodeB_voltage"] = data.get("nodeB_voltage", 0)
     latest_data["nodeB_current"] = data.get("nodeB_current", 0)
 
-    return jsonify({"status": "received"})
+    return jsonify({
+        "status": "received",
+        "data": latest_data   # 🔥 ADD THIS
+    })
 
 @app.route("/data")
 def data():
