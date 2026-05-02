@@ -3,6 +3,7 @@ import os
 
 app = Flask(__name__)
 
+# 🔥 GLOBAL STORE
 latest_data = {
     "nodeA_voltage": 0,
     "nodeA_current": 0,
@@ -12,23 +13,32 @@ latest_data = {
 
 @app.route("/update", methods=["POST"])
 def update():
+    global latest_data
     data = request.json
 
-    latest_data["nodeA_voltage"] = data.get("nodeA_voltage", 0)
-    latest_data["nodeA_current"] = data.get("nodeA_current", 0)
-    latest_data["nodeB_voltage"] = data.get("nodeB_voltage", 0)
-    latest_data["nodeB_current"] = data.get("nodeB_current", 0)
+    latest_data = {
+        "nodeA_voltage": data.get("nodeA_voltage", 0),
+        "nodeA_current": data.get("nodeA_current", 0),
+        "nodeB_voltage": data.get("nodeB_voltage", 0),
+        "nodeB_current": data.get("nodeB_current", 0)
+    }
+
+    print("UPDATED DATA:", latest_data)  # debug
 
     return jsonify({
         "status": "received",
-        "data": latest_data   # 🔥 ADD THIS
+        "data": latest_data
     })
+
 
 @app.route("/data")
 def data():
+    print("SENDING DATA:", latest_data)  # debug
     return jsonify(latest_data)
 
-# 🔥 THIS PART IS VERY IMPORTANT
+
+# 🔥 CORRECT RUN
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
+    print(f"Running on port: {port}")
     app.run(host="0.0.0.0", port=port)
