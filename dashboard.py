@@ -11,7 +11,7 @@ from datetime import datetime
 st_autorefresh(interval=2000, key="refresh")
 
 # ================= CONFIG =================
-MODE = "DEMO"
+MODE = "API"
 API_URL = "https://fault-backend-itqk.onrender.com/data"
 
 # ================= ⚡ BACKGROUND + UI =================
@@ -169,10 +169,10 @@ node_locations = {
 
 # ================= SESSION =================
 if "data" not in st.session_state:
-    st.session_state.data = pd.DataFrame(columns=["Time", "Voltage", "Current"])
+    st.session_state.data = pd.DataFrame(columns=["Time", "NodeA_V", "NodeA_C", "NodeB_V", "NodeB_C"])
 
 if "fault_location" not in st.session_state:
-    st.session_state.fault_location = "-"
+    st.session_state.fault_location = "-" 
 
 if "fault_history" not in st.session_state:
     st.session_state.fault_history = pd.DataFrame(
@@ -184,11 +184,21 @@ def get_data():
     if MODE == "API":
         try:
             res = requests.get(API_URL).json()
-            return res["voltage"], res["current"]
+            return (
+                res.get("nodeA_voltage", 0),
+                res.get("nodeA_current", 0),
+                res.get("nodeB_voltage", 0),
+                res.get("nodeB_current", 0)
+            )
         except:
-            return 0, 0
+            return 0, 0, 0, 0
     else:
-        return random.uniform(210, 240), random.uniform(0, 10)
+        return (
+            random.uniform(210, 240),
+            random.uniform(0, 10),
+            random.uniform(210, 240),
+            random.uniform(0, 10)
+        )
 
 def predict_fault(voltage, current):
     if voltage < 200:
@@ -198,13 +208,15 @@ def predict_fault(voltage, current):
     else:
         return "NORMAL"
 
-voltage, current = get_data()
+nodeA_v, nodeA_c, nodeB_v, nodeB_c = get_data()
 
 # ================= STORE DATA =================
 new_data = {
     "Time": len(st.session_state.data),
-    "Voltage": voltage,
-    "Current": current
+    "NodeA_V": nodeA_v,
+    "NodeA_C": nodeA_c,
+    "NodeB_V": nodeB_v,
+    "NodeB_C": nodeB_c
 }
 
 st.session_state.data = pd.concat(
@@ -215,20 +227,34 @@ st.session_state.data = pd.concat(
 df = st.session_state.data.tail(50)
 
 # ================= FAULT =================
-prediction = predict_fault(voltage, current)
+def detect_line_fault(vA, cA, vB, cB):
+    # Case 1: Everything normal
+    if vA >= 200 and vB >= 200 and cA < threshold and cB < threshold:
+        return "NORMAL ✅", "-"
 
-if prediction == "NORMAL":
-    fault = "NORMAL ✅"
-    st.session_state.fault_location = "-"
-else:
-    fault = f"{prediction} ⚠️"
-    if st.session_state.fault_location == "-":
-        st.session_state.fault_location = random.choice(selected_nodes)
+    # Case 2: Voltage drop from A → B
+    if vA >= 200 and vB < 200:
+        return "FAULT BETWEEN NODE A → NODE B ⚠️", "Between A-B"
 
-location = st.session_state.fault_location
+    # Case 3: Both low → upstream issue
+    if vA < 200 and vB < 200:
+        return "UPSTREAM FAULT ⚠️", "Before Node A"
+
+    # Case 4: High current spike
+    if cA > threshold or cB > threshold:
+        return "OVER CURRENT FAULT ⚡", "Between A-B"
+
+    return "NORMAL ✅", "-"
+
+
+# Apply logic
+overall_fault, location = detect_line_fault(nodeA_v, nodeA_c, nodeB_v, nodeB_c)
+
+# Store location
+st.session_state.fault_location = location
 
 # ================= ALERT =================
-if prediction != "NORMAL":
+if overall_fault != "NORMAL ✅":
     # 🚨 blinking alert
     st.markdown('<div class="blink">🚨 FAULT DETECTED 🚨</div>', unsafe_allow_html=True)
 
@@ -245,19 +271,26 @@ if prediction != "NORMAL":
     </script>
     """, unsafe_allow_html=True)
 # ================= METRICS =================
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown(f'<div class="card"><h3>Voltage</h3><h1>{round(voltage,2)} V</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><h3>Node A Voltage</h3><h1>{round(nodeA_v,2)} V</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><h3>Node A Current</h3><h1>{round(nodeA_c,2)} A</h1></div>', unsafe_allow_html=True)
 
 with col2:
-    st.markdown(f'<div class="card"><h3>Current</h3><h1>{round(current,2)} A</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><h3>Node B Voltage</h3><h1>{round(nodeB_v,2)} V</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card"><h3>Node B Current</h3><h1>{round(nodeB_c,2)} A</h1></div>', unsafe_allow_html=True)
 
-with col3:
-    st.markdown(f'<div class="card"><h3>Status</h3><h1>{fault}</h1></div>', unsafe_allow_html=True)
+# 🔥 CENTER STATUS CARD
+st.markdown(f'''
+<div class="card" style="margin-top:20px;">
+    <h3>System Status</h3>
+    <h1>{overall_fault}</h1>
+</div>
+''', unsafe_allow_html=True)
 
+# Location
 st.markdown(f"### 📍 Fault Location: **{location}**")
-
 # ================= 🌍 MAP =================
 st.subheader("🌍 Grid Visualization")
 
@@ -282,15 +315,23 @@ fig_map.add_trace(go.Scattermapbox(
     hoverinfo='none'
 ))
 
+# 🔥 HIGHLIGHT FAULT LINE (Between A-B)
+if location == "Between A-B" and len(lat) >= 2:
+    fig_map.add_trace(go.Scattermapbox(
+        lat=[lat[0], lat[1]],
+        lon=[lon[0], lon[1]],
+        mode='lines',
+        line=dict(width=6, color='red'),
+        hoverinfo='none'
+    ))
+
 # ⚡ CURRENT FLOW (moving dots illusion)
 flow_lat = []
 flow_lon = []
 
 for i in range(len(lat) - 1):
-    # midpoints → simulate moving current
     mid_lat = (lat[i] + lat[i+1]) / 2
     mid_lon = (lon[i] + lon[i+1]) / 2
-
     flow_lat.append(mid_lat)
     flow_lon.append(mid_lon)
 
@@ -302,14 +343,17 @@ fig_map.add_trace(go.Scattermapbox(
     hoverinfo='none'
 ))
 
-# 🔴 NODES
+# 🔴 NODES (highlight based on fault)
 colors = []
 sizes = []
 
-for n in selected_nodes:
-    if n == location:
+for i, n in enumerate(selected_nodes):
+    if location == "Before Node A" and i == 0:
         colors.append("red")
-        sizes.append(24)   # bigger
+        sizes.append(24)
+    elif location == "Between A-B":
+        colors.append("yellow")  # indicate segment fault
+        sizes.append(16)
     else:
         colors.append("cyan")
         sizes.append(12)
@@ -336,29 +380,51 @@ st.plotly_chart(fig_map, use_container_width=True)
 col1, col2 = st.columns(2)
 
 with col1:
-    fig1 = px.line(df, x="Time", y="Voltage")
+    fig1 = px.line(df, x="Time", y=["NodeA_V", "NodeB_V"], title="Voltage Trend (Node A vs Node B)")
     fig1.update_layout(template="plotly_dark")
     st.plotly_chart(fig1, use_container_width=True)
 
 with col2:
-    fig2 = px.line(df, x="Time", y="Current")
+    fig2 = px.line(df, x="Time", y=["NodeA_C", "NodeB_C"], title="Current Trend (Node A vs Node B)")
     fig2.update_layout(template="plotly_dark")
     st.plotly_chart(fig2, use_container_width=True)
 
 # ================= HISTORY =================
-if prediction != "NORMAL":
-    new_fault = pd.DataFrame([{
+# ================= HISTORY =================
+
+# Node A fault
+if faultA != "NORMAL":
+    new_fault_A = pd.DataFrame([{
         "Timestamp": datetime.now().strftime("%H:%M:%S"),
-        "Fault Type": prediction,
-        "Location": location,
-        "Voltage": round(voltage, 2),
-        "Current": round(current, 2)
+        "Fault Type": faultA,
+        "Location": "Node A",
+        "Voltage": round(nodeA_v, 2),
+        "Current": round(nodeA_c, 2)
     }])
 
     st.session_state.fault_history = pd.concat(
-        [st.session_state.fault_history, new_fault],
+        [st.session_state.fault_history, new_fault_A],
         ignore_index=True
-    ).tail(20)
+    )
 
+# Node B fault
+if faultB != "NORMAL":
+    new_fault_B = pd.DataFrame([{
+        "Timestamp": datetime.now().strftime("%H:%M:%S"),
+        "Fault Type": faultB,
+        "Location": "Node B",
+        "Voltage": round(nodeB_v, 2),
+        "Current": round(nodeB_c, 2)
+    }])
+
+    st.session_state.fault_history = pd.concat(
+        [st.session_state.fault_history, new_fault_B],
+        ignore_index=True
+    )
+
+# keep last 20 records
+st.session_state.fault_history = st.session_state.fault_history.tail(20)
+
+# display
 st.subheader("📜 Fault History")
 st.dataframe(st.session_state.fault_history, use_container_width=True)

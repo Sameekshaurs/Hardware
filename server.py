@@ -3,13 +3,22 @@ import os
 
 app = Flask(__name__)
 
-latest_data = {"voltage": 0, "current": 0}
+latest_data = {
+    "nodeA_voltage": 0,
+    "nodeA_current": 0,
+    "nodeB_voltage": 0,
+    "nodeB_current": 0
+}
 
 @app.route("/update", methods=["POST"])
 def update():
     data = request.json
-    latest_data["voltage"] = data.get("voltage", 0)
-    latest_data["current"] = data.get("current", 0)
+
+    latest_data["nodeA_voltage"] = data.get("nodeA_voltage", 0)
+    latest_data["nodeA_current"] = data.get("nodeA_current", 0)
+    latest_data["nodeB_voltage"] = data.get("nodeB_voltage", 0)
+    latest_data["nodeB_current"] = data.get("nodeB_current", 0)
+
     return jsonify({"status": "received"})
 
 @app.route("/data")
